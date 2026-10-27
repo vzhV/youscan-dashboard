@@ -1,0 +1,29 @@
+# Superpowers brainstorm sessions, specs and plans (local only, never committed)
+.superpowers/
+docs/superpowers/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Frontend
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+frontend/openapi.json
+
+# Tooling
+.DS_Store
+.vercel/

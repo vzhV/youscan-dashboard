@@ -15,6 +15,7 @@ from app.models import Dataset, Widget
 
 SEED_DATA_DIR = Path(__file__).resolve().parents[1] / "seed_data"
 FIRST_DATA_ROW = 2  # row 1 is the header
+SEED_TITLES = ["Campaign results over time", "Results by campaign", "Sentiment by brand"]
 OLD_TIMESTAMP = datetime(2000, 1, 1, tzinfo=UTC)  # earlier than anything a test creates
 
 

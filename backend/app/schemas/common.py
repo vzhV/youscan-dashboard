@@ -19,6 +19,7 @@ class ErrorBody(BaseModel):
     code: str = Field(description="Stable machine-readable error code in snake_case.", examples=["not_found"])
     message: str = Field(description="Human-readable explanation.", examples=["Widget not found"])
     details: dict[str, object] | None = Field(
+        default=None,
         description="Optional structured context, such as the offending fields; null when there is none.",
         examples=[{"fields": [{"loc": ["body", "title"], "message": "Field required"}]}],
     )

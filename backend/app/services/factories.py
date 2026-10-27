@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.dataset_repository import SqlDatasetRepository
 from app.repositories.widget_repository import SqlWidgetRepository
 from app.services.dashboard_service import DashboardService
+from app.services.dataset_service import DatasetService
 from app.services.import_service import ImportService
 from app.services.widget_service import WidgetService
 
@@ -26,3 +27,7 @@ def build_dashboard_service(session: AsyncSession) -> DashboardService:
     return DashboardService(
         SqlWidgetRepository(session), SqlDatasetRepository(session), build_import_service(session)
     )
+
+
+def build_dataset_service(session: AsyncSession) -> DatasetService:
+    return DatasetService(SqlDatasetRepository(session), SqlWidgetRepository(session))

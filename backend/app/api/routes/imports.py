@@ -1,4 +1,5 @@
 import json
+from collections.abc import Mapping
 from http import HTTPStatus
 from typing import Annotated
 
@@ -7,8 +8,25 @@ from fastapi import APIRouter, File, Form, Request, UploadFile
 from app.api.deps import ImportServiceDep
 from app.api.errors import error_responses
 from app.api.uploads import parse_selections, read_upload
+from app.schemas.common import ErrorBody
 from app.schemas.imports import ImportPreview, ImportResult
 from app.services.import_preview import preview_file
+
+INVALID_FILE: Mapping[int, ErrorBody] = {
+    HTTPStatus.UNPROCESSABLE_ENTITY: ErrorBody(
+        code="invalid_file", message="File is not a valid .xlsx workbook", details=None
+    )
+}
+NOT_SHAPEABLE: Mapping[int, ErrorBody] = {
+    HTTPStatus.UNPROCESSABLE_ENTITY: ErrorBody(
+        code="not_shapeable",
+        message="Sheet 'Data' cannot be shaped: Column 'Positive', row 2: '1,137' is not a number",
+        details={
+            "columns": [{"name": "Positive", "kind": "text"}],
+            "issues": [{"column": "Positive", "row": 2, "value": "1,137", "expected": "number"}],
+        },
+    )
+}
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -34,6 +52,7 @@ SelectionsForm = Annotated[str, Form(description=SELECTIONS_DESCRIPTION, example
         HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
         HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
         HTTPStatus.UNPROCESSABLE_ENTITY,
+        examples=INVALID_FILE,
     ),
 )
 async def preview_import(request: Request, file: FileUpload) -> ImportPreview:
@@ -56,6 +75,7 @@ async def preview_import(request: Request, file: FileUpload) -> ImportPreview:
         HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
         HTTPStatus.UNPROCESSABLE_ENTITY,
         HTTPStatus.SERVICE_UNAVAILABLE,
+        examples=NOT_SHAPEABLE,
     ),
 )
 async def create_import(

@@ -20,6 +20,7 @@ from app.core.errors import (
     LimitExceededError,
     NotFoundError,
     NotShapeableError,
+    SeedDataError,
     SheetNotFoundError,
     UnsupportedFileTypeError,
     WidgetHasNoDataError,
@@ -47,17 +48,71 @@ STATUS_BY_ERROR: Mapping[type[DomainError], int] = {
     UnsupportedFileTypeError: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
     FileTooLargeError: HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
     DatabaseUnavailableError: HTTPStatus.SERVICE_UNAVAILABLE,
+    SeedDataError: HTTPStatus.INTERNAL_SERVER_ERROR,
 }
 
 
-def error_responses(*statuses: int) -> dict[int | str, dict[str, Any]]:
+ERROR_EXAMPLES: Mapping[int, ErrorBody] = {
+    HTTPStatus.NOT_FOUND: ErrorBody(
+        code="not_found",
+        message="Widget not found",
+        details={"widget_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"},
+    ),
+    HTTPStatus.CONFLICT: ErrorBody(
+        code="widget_has_no_data", message="Text widgets have no chart data", details=None
+    ),
+    HTTPStatus.REQUEST_ENTITY_TOO_LARGE: ErrorBody(
+        code="file_too_large", message="File is larger than 4 MB", details={"max_bytes": 4_194_304}
+    ),
+    HTTPStatus.UNSUPPORTED_MEDIA_TYPE: ErrorBody(
+        code="unsupported_file_type",
+        message="Unsupported file type '.txt'. Supported: .csv, .xlsx",
+        details={"supported": [".csv", ".xlsx"]},
+    ),
+    HTTPStatus.UNPROCESSABLE_ENTITY: ErrorBody(
+        code=VALIDATION_ERROR_CODE,
+        message=VALIDATION_ERROR_MESSAGE,
+        details={"fields": [{"loc": ["body", "title"], "message": "Field required"}]},
+    ),
+    HTTPStatus.INTERNAL_SERVER_ERROR: ErrorBody(
+        code=INTERNAL_ERROR_CODE, message=INTERNAL_ERROR_MESSAGE, details=None
+    ),
+    HTTPStatus.SERVICE_UNAVAILABLE: ErrorBody(
+        code="database_unavailable", message="Database is unreachable", details=None
+    ),
+}
+
+
+def invalid_path_parameter_example(param: str) -> ErrorBody:
+    """The 422 a malformed UUID path parameter produces."""
+    field = {
+        "loc": ["path", param],
+        "message": "Input should be a valid UUID, invalid character: found `n` at 0",
+    }
+    return ErrorBody(
+        code=VALIDATION_ERROR_CODE, message=VALIDATION_ERROR_MESSAGE, details={"fields": [field]}
+    )
+
+
+def error_responses(
+    *statuses: int, examples: Mapping[int, ErrorBody] | None = None
+) -> dict[int | str, dict[str, Any]]:
     """Build a route's `responses=` mapping; 500 is always documented.
 
+    `examples` replaces the shared example of a status for routes whose error reads differently.
     Any comes from FastAPI's own `responses` parameter type.
     """
     documented = sorted({*statuses, HTTPStatus.INTERNAL_SERVER_ERROR})
+    shown = {**ERROR_EXAMPLES, **(examples or {})}
+    return {status: _documented(status, shown[status]) for status in documented}
+
+
+def _documented(status: int, error: ErrorBody) -> dict[str, Any]:
+    example = ErrorResponse(error=error).model_dump(mode="json")
     return {
-        status: {"model": ErrorResponse, "description": HTTPStatus(status).phrase} for status in documented
+        "model": ErrorResponse,
+        "description": HTTPStatus(status).phrase,
+        "content": {"application/json": {"example": example}},
     }
 
 
@@ -79,11 +134,14 @@ def status_for(error: DomainError) -> int:
     raise LookupError(f"No HTTP status registered for {type(error).__name__}")
 
 
-async def handle_domain_error(_: Request, exc: Exception) -> JSONResponse:
+async def handle_domain_error(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, DomainError)  # noqa: S101  # narrows the handler's Exception parameter
     details = dict(exc.details) if exc.details is not None else None
     body = ErrorBody(code=exc.code, message=exc.message, details=details)
-    return build_error_response(status_for(exc), body)
+    status = status_for(exc)
+    if status >= HTTPStatus.INTERNAL_SERVER_ERROR:
+        logger.error("%s on %s %s", exc.code, request.method, request.url.path, exc_info=exc)
+    return build_error_response(status, body)
 
 
 def field_errors(errors: Sequence[Mapping[str, Any]]) -> list[dict[str, object]]:

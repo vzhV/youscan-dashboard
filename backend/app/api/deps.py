@@ -5,7 +5,14 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import session_scope
-from app.services.factories import build_import_service, build_widget_service
+from app.services.dashboard_service import DashboardService
+from app.services.dataset_service import DatasetService
+from app.services.factories import (
+    build_dashboard_service,
+    build_dataset_service,
+    build_import_service,
+    build_widget_service,
+)
 from app.services.import_service import ImportService
 from app.services.widget_service import WidgetService
 
@@ -31,3 +38,17 @@ async def get_import_service(session: SessionDep) -> ImportService:
 
 
 ImportServiceDep = Annotated[ImportService, Depends(get_import_service)]
+
+
+async def get_dataset_service(session: SessionDep) -> DatasetService:
+    return build_dataset_service(session)
+
+
+DatasetServiceDep = Annotated[DatasetService, Depends(get_dataset_service)]
+
+
+async def get_dashboard_service(session: SessionDep) -> DashboardService:
+    return build_dashboard_service(session)
+
+
+DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]

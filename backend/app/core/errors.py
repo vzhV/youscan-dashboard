@@ -63,3 +63,7 @@ class LimitExceededError(DomainError):
 
 class DatabaseUnavailableError(DomainError):
     code = "database_unavailable"
+
+
+class SeedDataError(DomainError):
+    code = "seed_data_invalid"

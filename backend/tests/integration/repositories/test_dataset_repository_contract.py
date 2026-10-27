@@ -104,3 +104,16 @@ async def test_delete_all_datasets_cascades_to_chart_widgets_and_keeps_text_widg
     assert await widget_repo.get(chart_widget.id) is None
     assert await widget_repo.get(note.id) is not None
     assert [widget.title for widget in await widget_repo.list_ordered()] == ["note"]
+
+
+async def test_get_for_widget_returns_added_dataset(dataset_repo: DatasetRepository) -> None:
+    dataset = await dataset_repo.add(make_dataset(name="found"))
+
+    found = await dataset_repo.get_for_widget(dataset.id)
+
+    assert found is not None
+    assert found.id == dataset.id
+
+
+async def test_get_for_widget_unknown_dataset_returns_none(dataset_repo: DatasetRepository) -> None:
+    assert await dataset_repo.get_for_widget(uuid4()) is None

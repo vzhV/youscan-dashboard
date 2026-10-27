@@ -1,12 +1,20 @@
+from collections.abc import Mapping
 from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Response
 
 from app.api.deps import WidgetServiceDep
-from app.api.errors import error_responses
+from app.api.errors import error_responses, invalid_path_parameter_example
 from app.schemas.chart import ChartData
+from app.schemas.common import ErrorBody
 from app.schemas.widget import WidgetCreate, WidgetRead, WidgetUpdate
+
+# PATCH also validates a body; its 422 example shows the path case, and a body 422 has the same shape with a
+# "body" loc.
+INVALID_WIDGET_ID: Mapping[int, ErrorBody] = {
+    HTTPStatus.UNPROCESSABLE_ENTITY: invalid_path_parameter_example("widget_id")
+}
 
 router = APIRouter(prefix="/widgets", tags=["widgets"])
 
@@ -44,7 +52,10 @@ async def create_widget(payload: WidgetCreate, service: WidgetServiceDep) -> Wid
     status_code=HTTPStatus.OK,
     response_model=WidgetRead,
     responses=error_responses(
-        HTTPStatus.NOT_FOUND, HTTPStatus.UNPROCESSABLE_ENTITY, HTTPStatus.SERVICE_UNAVAILABLE
+        HTTPStatus.NOT_FOUND,
+        HTTPStatus.UNPROCESSABLE_ENTITY,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        examples=INVALID_WIDGET_ID,
     ),
 )
 async def update_widget(widget_id: UUID, payload: WidgetUpdate, service: WidgetServiceDep) -> WidgetRead:
@@ -59,7 +70,10 @@ async def update_widget(widget_id: UUID, payload: WidgetUpdate, service: WidgetS
     status_code=HTTPStatus.NO_CONTENT,
     response_class=Response,
     responses=error_responses(
-        HTTPStatus.NOT_FOUND, HTTPStatus.UNPROCESSABLE_ENTITY, HTTPStatus.SERVICE_UNAVAILABLE
+        HTTPStatus.NOT_FOUND,
+        HTTPStatus.UNPROCESSABLE_ENTITY,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        examples=INVALID_WIDGET_ID,
     ),
 )
 async def delete_widget(widget_id: UUID, service: WidgetServiceDep) -> Response:
@@ -79,6 +93,7 @@ async def delete_widget(widget_id: UUID, service: WidgetServiceDep) -> Response:
         HTTPStatus.CONFLICT,
         HTTPStatus.UNPROCESSABLE_ENTITY,
         HTTPStatus.SERVICE_UNAVAILABLE,
+        examples=INVALID_WIDGET_ID,
     ),
 )
 async def get_widget_data(widget_id: UUID, service: WidgetServiceDep) -> ChartData:

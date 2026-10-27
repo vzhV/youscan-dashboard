@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 
 import pytest
@@ -6,7 +7,7 @@ from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel
 
 from app.core.config import Settings
-from app.core.errors import DomainError, NotFoundError
+from app.core.errors import DomainError, NotFoundError, SeedDataError
 from app.main import create_app
 
 
@@ -26,6 +27,10 @@ async def probe_client(settings: Settings) -> AsyncIterator[AsyncClient]:
     @router.get("/missing")
     async def missing() -> None:
         raise NotFoundError("Widget not found")
+
+    @router.get("/corrupt-seed")
+    async def corrupt_seed() -> None:
+        raise SeedDataError("Seed file 'x.csv' could not be imported: bad")
 
     @router.get("/boom")
     async def boom() -> None:
@@ -95,3 +100,32 @@ async def test_unmapped_domain_error_falls_through_to_internal_error(probe_clien
 
     assert response.status_code == 500
     assert response.json()["error"]["code"] == "internal_error"
+
+
+async def test_server_side_domain_error_is_logged_at_error_level(
+    probe_client: AsyncClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    response = await probe_client.get("/__test/corrupt-seed")
+
+    assert response.status_code == 500
+    [record] = [record for record in caplog.records if record.levelno >= logging.ERROR]
+    assert "seed_data_invalid" in record.getMessage()
+    assert record.exc_info is not None
+
+
+async def test_client_side_domain_error_is_not_logged_at_error_level(
+    probe_client: AsyncClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    await probe_client.get("/__test/missing")
+
+    assert not [record for record in caplog.records if record.levelno >= logging.ERROR]
+
+
+async def test_error_without_details_still_returns_a_null_details_field(client: AsyncClient) -> None:
+    text_widget = (await client.post("/api/v1/widgets", json={"type": "text"})).json()
+
+    response = await client.get(f"/api/v1/widgets/{text_widget['id']}/data")
+
+    assert response.status_code == 409
+    assert response.json()["error"]["details"] is None
+    assert "details" in response.json()["error"]

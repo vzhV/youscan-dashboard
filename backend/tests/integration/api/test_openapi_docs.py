@@ -8,6 +8,8 @@ from httpx import AsyncClient
 from starlette.routing import Route
 
 from app.api.deps import get_session
+from app.api.errors import INTERNAL_ERROR_CODE, STATUS_BY_ERROR, VALIDATION_ERROR_CODE
+from app.schemas.common import ErrorResponse
 
 HTTP_METHODS = {"get", "put", "post", "delete", "patch", "options", "head"}
 API_PREFIX = "/api/v1"
@@ -98,3 +100,47 @@ def test_every_database_route_documents_service_unavailable(app: FastAPI) -> Non
     assert routes
     for route in routes:
         assert HTTPStatus.SERVICE_UNAVAILABLE in route.responses, f"{route.name} must document 503"
+
+
+def catalog_codes_by_status() -> dict[int, set[str]]:
+    codes: dict[int, set[str]] = {
+        HTTPStatus.UNPROCESSABLE_ENTITY: {VALIDATION_ERROR_CODE},
+        HTTPStatus.INTERNAL_SERVER_ERROR: {INTERNAL_ERROR_CODE},
+    }
+    for error_class, status in STATUS_BY_ERROR.items():
+        codes.setdefault(status, set()).add(error_class.code)
+    return codes
+
+
+def documented_errors(app: FastAPI) -> list[tuple[str, int, dict[str, Any]]]:
+    return [
+        (name, int(status), response["content"]["application/json"]["example"])
+        for name, operation in operations(app)
+        for status, response in operation["responses"].items()
+        if int(status) >= HTTPStatus.BAD_REQUEST
+    ]
+
+
+def test_every_documented_error_example_matches_its_status_and_the_schema(app: FastAPI) -> None:
+    codes_by_status = catalog_codes_by_status()
+    for name, status, example in documented_errors(app):
+        assert example["error"]["code"] in codes_by_status[status], f"{name} {status}"
+        ErrorResponse.model_validate(example)
+
+
+def test_dataset_routes_document_a_dataset_not_found_example(app: FastAPI) -> None:
+    messages = {
+        example["error"]["message"]
+        for name, status, example in documented_errors(app)
+        if "/datasets" in name and status == HTTPStatus.NOT_FOUND
+    }
+
+    assert messages == {"Dataset not found"}
+
+
+def test_path_id_routes_document_a_path_parameter_validation_example(app: FastAPI) -> None:
+    for name, status, example in documented_errors(app):
+        if status != HTTPStatus.UNPROCESSABLE_ENTITY or "{" not in name:
+            continue
+        [field] = example["error"]["details"]["fields"]
+        assert field["loc"][0] == "path", name

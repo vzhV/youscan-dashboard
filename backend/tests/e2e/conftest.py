@@ -1,4 +1,4 @@
-"""Black-box CLI tests against the migrated test database.
+"""Black-box CLI and HTTP scenario tests against the migrated test database.
 
 The dev database is never touched: DATABASE_URL is pointed at TEST_DATABASE_URL and verified before use.
 """
@@ -16,6 +16,7 @@ from app.core.migrations import make_alembic_config
 TRUNCATE_BOARD = "TRUNCATE TABLE widgets, datasets CASCADE"
 SELECT_TITLES = "SELECT title FROM widgets ORDER BY position"
 COUNT_DATASETS = "SELECT count(*) FROM datasets"
+COUNT_WIDGETS = "SELECT count(*) FROM widgets"
 
 
 @pytest.fixture(scope="session")
@@ -74,13 +75,19 @@ def board_titles(test_database_url: str) -> Callable[[], list[str]]:
     return fetch
 
 
+def _count(url: str, statement: str) -> int:
+    engine = create_engine(url)
+    with engine.connect() as connection:
+        count = int(connection.execute(text(statement)).scalar_one())
+    engine.dispose()
+    return count
+
+
 @pytest.fixture
 def dataset_count(test_database_url: str) -> Callable[[], int]:
-    def fetch() -> int:
-        engine = create_engine(test_database_url)
-        with engine.connect() as connection:
-            count = int(connection.execute(text(COUNT_DATASETS)).scalar_one())
-        engine.dispose()
-        return count
+    return lambda: _count(test_database_url, COUNT_DATASETS)
 
-    return fetch
+
+@pytest.fixture
+def board_size(test_database_url: str) -> Callable[[], tuple[int, int]]:
+    return lambda: (_count(test_database_url, COUNT_WIDGETS), _count(test_database_url, COUNT_DATASETS))

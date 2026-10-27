@@ -66,6 +66,9 @@ class InMemoryWidgetRepository:
     async def delete_all(self) -> None:
         self._store.widgets.clear()
 
+    async def lock_board(self) -> None:
+        """No-op: tests are single-threaded, so there is nothing to serialize."""
+
     def _check_constraints(self, widget: Widget) -> None:
         """Fail where the database would: the foreign key and both widget CHECK constraints."""
         if widget.dataset_id is not None and widget.dataset_id not in self._store.datasets:
@@ -88,6 +91,9 @@ class InMemoryDatasetRepository:
         return [(dataset, self._count_widgets(dataset)) for dataset in listed]
 
     async def get(self, dataset_id: UUID) -> Dataset | None:
+        return self._store.datasets.get(dataset_id)
+
+    async def get_for_widget(self, dataset_id: UUID) -> Dataset | None:
         return self._store.datasets.get(dataset_id)
 
     async def get_display_data(self, dataset_id: UUID) -> ChartData | None:

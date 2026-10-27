@@ -1,14 +1,15 @@
 import threading
+from pathlib import Path
 
 import pytest
 
 from app.core.enums import ChartType, DatasetOrigin, WidgetType
-from app.core.errors import ChartTypeMismatchError, SheetNotFoundError
+from app.core.errors import ChartTypeMismatchError, SeedDataError, SheetNotFoundError
 from app.importing.parsers.registry import ParserRegistry
 from app.importing.source_file import SourceFile
 from app.schemas.imports import ImportSelection
 from app.services.import_service import ImportService
-from tests.factories import SEED_DATA_DIR
+from tests.factories import SEED_DATA_DIR, SEED_TITLES
 from tests.fakes import (
     InMemoryDatasetRepository,
     InMemoryStore,
@@ -117,11 +118,7 @@ async def test_import_seed_creates_manifest_widgets_in_order(
 ) -> None:
     result = await importer.import_seed()
 
-    assert [widget.title for widget in result.widgets] == [
-        "Campaign results over time",
-        "Results by campaign",
-        "Sentiment by brand",
-    ]
+    assert [widget.title for widget in result.widgets] == SEED_TITLES
     assert [widget.type for widget in result.widgets] == [
         WidgetType.LINE,
         WidgetType.PIE,
@@ -143,3 +140,17 @@ async def test_import_parses_and_plans_off_the_event_loop(
 
     assert parser.thread_ids
     assert threading.get_ident() not in parser.thread_ids
+
+
+async def test_import_seed_with_missing_seed_file_raises_seed_data_error_naming_only_the_file(
+    importer: ImportService, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr("app.services.import_service.SEED_DATA_DIR", tmp_path)
+
+    with pytest.raises(SeedDataError) as raised:
+        await importer.import_seed()
+
+    assert (
+        str(raised.value) == "Seed file 'line-and-pie.xlsx' could not be imported: the file could not be read"
+    )
+    assert raised.value.details == {"file": "line-and-pie.xlsx"}

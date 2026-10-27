@@ -1,15 +1,16 @@
 import runpy
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
 
 from app.cli.app import cli
 from app.core.config import get_settings
-from tests.factories import SEED_DATA_DIR
+from app.services.seed import SEED_ENTRIES
+from tests.factories import SEED_DATA_DIR, SEED_TITLES
 
 XLSX = str(SEED_DATA_DIR / "line-and-pie.xlsx")
-SEED_TITLES = ["Campaign results over time", "Results by campaign", "Sentiment by brand"]
 
 
 def test_cli_seed_creates_the_three_seed_widgets(
@@ -82,3 +83,17 @@ def test_cli_module_entrypoint_shows_help(monkeypatch: pytest.MonkeyPatch) -> No
         runpy.run_module("app.cli", run_name="__main__")
 
     assert stopped.value.code == 0
+
+
+def test_cli_seed_with_corrupt_seed_file_reports_error_without_traceback(
+    runner: CliRunner, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    for entry in SEED_ENTRIES:
+        (tmp_path / entry.filename).write_bytes(b"not a spreadsheet")
+    monkeypatch.setattr("app.services.import_service.SEED_DATA_DIR", tmp_path)
+
+    result = runner.invoke(cli, ["seed"])
+
+    assert result.exit_code == 1
+    assert "Error: Seed file 'line-and-pie.xlsx' could not be imported" in result.output
+    assert "Traceback" not in result.output

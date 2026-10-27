@@ -3,7 +3,13 @@ from fastapi.routing import APIRoute
 TAGS_METADATA: list[dict[str, str]] = [
     {"name": "health", "description": "Liveness and database connectivity."},
     {"name": "widgets", "description": "Create, rename, edit and delete widgets, and read their chart data."},
-    {"name": "datasets", "description": "Datasets that back chart widgets."},
+    {
+        "name": "datasets",
+        "description": (
+            "Seeded and uploaded datasets: list them, add one to the dashboard again, "
+            "or delete one with its widgets."
+        ),
+    },
     {"name": "imports", "description": "Two-step file import: inspect a file, then confirm it."},
     {"name": "dashboard", "description": "Board-level operations such as reset to the seeded state."},
 ]

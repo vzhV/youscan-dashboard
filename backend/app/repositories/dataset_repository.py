@@ -25,6 +25,13 @@ class SqlDatasetRepository:
     async def get(self, dataset_id: UUID) -> Dataset | None:
         return await self._session.scalar(select(Dataset).where(Dataset.id == dataset_id))
 
+    async def get_for_widget(self, dataset_id: UUID) -> Dataset | None:
+        # FOR KEY SHARE makes a concurrent DELETE of this dataset wait until we commit, then cascade the new
+        # widget; without it the insert hits a foreign key violation and the request fails with a 500.
+        # `read=True` is what makes SQLAlchemy emit it; key_share alone compiles to FOR NO KEY UPDATE.
+        statement = select(Dataset).where(Dataset.id == dataset_id).with_for_update(read=True, key_share=True)
+        return await self._session.scalar(statement)
+
     async def get_display_data(self, dataset_id: UUID) -> ChartData | None:
         # Selecting the bare column avoids materialising (and caching) a Dataset just to read its payload.
         statement = select(Dataset.display_data).where(Dataset.id == dataset_id)

@@ -1,11 +1,14 @@
 from uuid import UUID
 
-from sqlalchemy import Select, delete, func, select
+from sqlalchemy import Select, delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.enums import WidgetType
 from app.models import Widget
+
+# Arbitrary application-wide key naming the board lock; any constant unique among our advisory locks works.
+BOARD_LOCK_KEY = 7_201_027
 
 
 def _widgets_with_dataset() -> Select[Widget]:
@@ -53,3 +56,8 @@ class SqlWidgetRepository:
     async def delete_all(self) -> None:
         await self._session.execute(delete(Widget))
         self._session.expunge_all()
+
+    async def lock_board(self) -> None:
+        # Serializes board-replacing requests: without it, concurrent resets each delete, then all insert.
+        # A transaction-level lock is released on commit or rollback, so it works behind a transaction pooler.
+        await self._session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": BOARD_LOCK_KEY})

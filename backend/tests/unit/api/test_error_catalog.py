@@ -1,4 +1,5 @@
 import re
+from http import HTTPStatus
 
 from app.api.errors import STATUS_BY_ERROR, status_for
 from app.core import errors
@@ -40,3 +41,8 @@ def test_status_for_resolves_subclasses_through_the_mro() -> None:
         code = "missing_widget"
 
     assert status_for(MissingWidgetError("gone")) == 404
+
+
+def test_seed_data_error_maps_to_500_with_its_own_code() -> None:
+    assert status_for(errors.SeedDataError("bad")) == HTTPStatus.INTERNAL_SERVER_ERROR
+    assert errors.SeedDataError.code == "seed_data_invalid"

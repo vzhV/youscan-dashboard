@@ -6,6 +6,7 @@ import anyio
 import anyio.to_thread
 
 from app.core.enums import DatasetOrigin, WidgetType, widget_type_of
+from app.core.errors import DomainError, SeedDataError
 from app.importing.parsers.registry import DEFAULT_REGISTRY, ParserRegistry
 from app.importing.reader import read_tables
 from app.importing.shaping.chart_rules import validate_for
@@ -76,18 +77,32 @@ class ImportService:
         )
 
     async def _import_seed_file(self, filename: str, entries: Sequence[SeedEntry]) -> ImportResult:
-        content = await anyio.Path(SEED_DATA_DIR / filename).read_bytes()
         selections = [
             ImportSelection(sheet=entry.sheet, chart_type=entry.chart_type, title=entry.title)
             for entry in entries
         ]
-        return await self.import_file(SourceFile(filename, content), selections, DatasetOrigin.SEED)
+        # The bundled files are at fault, not the caller's input, so failures here must not look like a 4xx.
+        # Database errors are SQLAlchemy errors, not DomainErrors, so they pass through unwrapped.
+        try:
+            content = await anyio.Path(SEED_DATA_DIR / filename).read_bytes()
+            return await self.import_file(SourceFile(filename, content), selections, DatasetOrigin.SEED)
+        except OSError as error:
+            raise _seed_error(filename, "the file could not be read") from error
+        except DomainError as error:
+            raise _seed_error(filename, error.message) from error
 
     async def _store(self, plan: _PlannedImport) -> tuple[DatasetRead, WidgetRead]:
         dataset = await self._datasets.add(plan.dataset)
         draft = WidgetDraft(type=plan.widget_type, title=plan.title, dataset=dataset)
         widget = await append_widget(self._widgets, draft)
         return to_dataset_read(dataset, widget_count=1), to_widget_read(widget)
+
+
+def _seed_error(filename: str, reason: str) -> SeedDataError:
+    # Only the file name, never its path, reaches the response body.
+    return SeedDataError(
+        f"Seed file '{filename}' could not be imported: {reason}", details={"file": filename}
+    )
 
 
 def _plan_import(request: _ImportRequest) -> list[_PlannedImport]:

@@ -5,9 +5,11 @@ from zipfile import ZipFile
 
 from openpyxl import Workbook
 
+from app.core.enums import ChartType, DatasetOrigin
 from app.importing.reader import read_tables
 from app.importing.source_file import SourceFile
 from app.importing.table import Cell, Row, Table
+from app.models import Dataset
 
 SEED_DATA_DIR = Path(__file__).resolve().parents[1] / "seed_data"
 FIRST_DATA_ROW = 2  # row 1 is the header
@@ -79,4 +81,15 @@ def make_table(header: Sequence[str], rows: Sequence[Sequence[Cell]], name: str 
             Row(number, (*cells, *([None] * (width - len(cells)))))
             for number, cells in enumerate(rows, start=FIRST_DATA_ROW)
         ),
+    )
+
+
+def make_dataset() -> Dataset:
+    return Dataset(
+        name="data",
+        origin=DatasetOrigin.SEED,
+        chart_type=ChartType.LINE,
+        row_count=1,
+        data={"categories": [], "series": []},
+        display_data={"categories": [], "series": []},
     )

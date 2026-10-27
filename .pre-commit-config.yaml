@@ -38,7 +38,7 @@ repos:
         pass_filenames: false
       - id: mypy
         name: mypy
-        entry: uv run --frozen --directory backend mypy app tests
+        entry: uv run --frozen --directory backend mypy app tests migrations
         language: system
         files: ^backend/(.*\.py|pyproject\.toml)$
         pass_filenames: false

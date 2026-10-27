@@ -2,7 +2,7 @@
 PRE_COMMIT = PATH="$$(uv tool dir --bin):$$PATH" pre-commit
 REQUIRED_NODE_MAJOR = $(shell cat .nvmrc)
 
-.PHONY: help dev dev-db dev-db-down install lint format typecheck test check node-check \
+.PHONY: help dev dev-db dev-db-down migrate install lint format typecheck test check node-check \
 	backend-install backend-lint backend-format backend-typecheck backend-test backend-dev \
 	frontend-install frontend-eslint frontend-lint frontend-format frontend-typecheck frontend-test frontend-build frontend-dev
 
@@ -14,6 +14,9 @@ dev-db: ## Start local Postgres (dashboard, dashboard_test, dashboard_e2e)
 
 dev-db-down: ## Stop local Postgres
 	docker compose down
+
+migrate: ## Apply Alembic migrations to DATABASE_URL (or MIGRATIONS_DATABASE_URL)
+	cd backend && uv run --frozen alembic upgrade head
 
 dev: ## Run backend (:8000) and frontend (Vite) together
 	$(MAKE) -j2 backend-dev frontend-dev
@@ -41,7 +44,7 @@ backend-format: ## Format the backend with Ruff
 	cd backend && uv run --frozen ruff check --fix . && uv run --frozen ruff format .
 
 backend-typecheck: ## mypy --strict on the backend
-	cd backend && uv run --frozen mypy app tests
+	cd backend && uv run --frozen mypy app tests migrations
 
 backend-test: ## Backend unit and integration tests with coverage gate
 	cd backend && uv run --frozen pytest tests/unit tests/integration --cov=app --cov-report=term-missing

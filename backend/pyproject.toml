@@ -63,6 +63,7 @@ pythonpath = ["."]
 
 [tool.coverage.run]
 branch = true
+concurrency = ["greenlet", "thread"]
 omit = ["migrations/*"]
 
 [tool.coverage.report]

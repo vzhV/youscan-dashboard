@@ -7,7 +7,7 @@ from openpyxl.utils import get_column_letter
 from app.core.errors import LimitExceededError
 from app.importing.location import describe_source
 
-LimitName = Literal["max_sheets", "max_columns", "max_rows"]
+LimitName = Literal["max_sheets", "max_columns", "max_rows", "max_series"]
 
 
 @dataclass(frozen=True)
@@ -15,6 +15,7 @@ class ImportLimits:
     max_sheets: int = 20
     max_columns: int = 50
     max_rows: int = 100_000
+    max_series: int = 50
 
 
 DEFAULT_LIMITS = ImportLimits()
@@ -40,6 +41,14 @@ def too_many_columns(sheet: str | None, allowed: int, width: int, row: int) -> L
     message = f"{where}; at most {allowed:,} columns are allowed"
     details = {"allowed": allowed, "actual": width, "sheet": sheet, "column": letter, "row": row}
     return _exceeded("max_columns", message, details)
+
+
+def too_many_series(sheet: str | None, allowed: int, column: str, row: int) -> LimitExceededError:
+    # The pivot allocates dates x series values, so the series count is capped before it is built.
+    where = f"{describe_source(sheet)} has more than {allowed:,} distinct values in column '{column}'"
+    message = f"{where} (one series each), the maximum allowed (reached at row {row})"
+    details = {"allowed": allowed, "sheet": sheet, "column": column, "row": row}
+    return _exceeded("max_series", message, details)
 
 
 def _exceeded(limit: LimitName, message: str, details: Mapping[str, object]) -> LimitExceededError:

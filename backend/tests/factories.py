@@ -5,7 +5,12 @@ from zipfile import ZipFile
 
 from openpyxl import Workbook
 
+from app.importing.reader import read_tables
+from app.importing.source_file import SourceFile
+from app.importing.table import Cell, Row, Table
+
 SEED_DATA_DIR = Path(__file__).resolve().parents[1] / "seed_data"
+FIRST_DATA_ROW = 2  # row 1 is the header
 
 
 def make_xlsx(sheets: Mapping[str, Sequence[Sequence[object]]]) -> bytes:
@@ -53,3 +58,25 @@ def replace_zip_member(archive_bytes: bytes, member: str, data: bytes) -> bytes:
         members = {item: archive.read(item) for item in archive.namelist()}
     members[member] = data
     return make_zip(members)
+
+
+def seed_table(filename: str, sheet: str | None = None) -> Table:
+    """Parse a provided sample file; `sheet` picks one table from a workbook."""
+    source = SourceFile(filename, (SEED_DATA_DIR / filename).read_bytes())
+    tables = [table for table in read_tables(source) if sheet is None or table.name == sheet]
+    if not tables:
+        raise LookupError(f"{filename} has no sheet named '{sheet}'")
+    return tables[0]
+
+
+def make_table(header: Sequence[str], rows: Sequence[Sequence[Cell]], name: str | None = None) -> Table:
+    """Like build_table, short rows are padded to the header width."""
+    width = len(header)
+    return Table(
+        name,
+        tuple(header),
+        tuple(
+            Row(number, (*cells, *([None] * (width - len(cells)))))
+            for number, cells in enumerate(rows, start=FIRST_DATA_ROW)
+        ),
+    )

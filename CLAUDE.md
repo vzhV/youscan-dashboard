@@ -155,7 +155,7 @@ Node version comes from `.nvmrc` (Node 24 LTS). Python is 3.12, managed by uv.
   - pie: exactly one series, values ≥ 0, ≤ 20 categories
   - bar and stacked bar: ≤ 100 categories
 - **Suggestion order:** line if the categories are dates; pie if there is one series; otherwise stacked bar.
-- **Limits:** 4 MB per file (`MAX_UPLOAD_MB`), 100k rows per sheet, 50 columns, 20 sheets.
+- **Limits:** 4 MB per file (`MAX_UPLOAD_MB`), 100k rows per sheet, 50 columns, 20 sheets, 50 series per chart.
 
 ### HTTP API
 

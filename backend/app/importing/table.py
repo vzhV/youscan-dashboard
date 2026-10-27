@@ -19,6 +19,7 @@ class Row:
 
 @dataclass(frozen=True)
 class Table:
+    # Every row has exactly len(header) cells (build_table pads short rows), so cells can be indexed directly.
     name: str | None  # None for CSV, which has no sheets
     header: tuple[str, ...]
     rows: tuple[Row, ...]
@@ -50,7 +51,7 @@ def build_table(
         return None
     data_rows = tuple(rows)
     kept = _kept_columns(name, header_row, data_rows)
-    header = tuple(_header_text(_cell_at(header_row, index)) for index in kept)
+    header = tuple(cell_text(_cell_at(header_row, index)) for index in kept)
     _reject_duplicate_headers(name, header, kept)
     return Table(name, header, tuple(_select(row, kept) for row in data_rows))
 
@@ -113,7 +114,8 @@ def _reject_duplicate_headers(name: str | None, header: Sequence[str], columns: 
         seen.add(title)
 
 
-def _header_text(cell: Cell) -> str:
+def cell_text(cell: Cell) -> str:
+    # Used for headers and text categories alike, so every label reads the same way.
     # XLSX stores every number as a float; "2023.0" or a midnight timestamp would be an ugly header.
     if isinstance(cell, datetime):
         return cell.date().isoformat() if cell.time() == time.min else cell.isoformat()

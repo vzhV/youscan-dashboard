@@ -1,0 +1,48 @@
+.layout {
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--ant-margin-xl);
+}
+
+.brand {
+  color: var(--ant-color-text-light-solid);
+  font-size: var(--ant-font-size-lg);
+  font-weight: var(--ant-font-weight-strong);
+}
+
+.nav {
+  display: flex;
+  gap: var(--ant-margin-lg);
+}
+
+.link {
+  color: color-mix(in srgb, var(--ant-color-text-light-solid) 70%, transparent);
+  border-bottom: 2px solid transparent;
+}
+
+.link:hover {
+  color: var(--ant-color-text-light-solid);
+}
+
+/* The underline marks the active page without relying on color alone. */
+.link[aria-current="page"] {
+  color: var(--ant-color-text-light-solid);
+  border-bottom-color: var(--ant-color-text-light-solid);
+}
+
+.content {
+  padding: var(--ant-padding-lg);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

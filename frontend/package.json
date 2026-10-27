@@ -1,0 +1,63 @@
+{
+  "name": "dashboard-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@12.16.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run --coverage",
+    "test:e2e": "playwright test --project=e2e",
+    "test:perf": "playwright test --project=perf"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.3.4",
+    "@tanstack/react-query": "^5.105.0",
+    "antd": "^6.6.8",
+    "chart.js": "^4.6.1",
+    "openapi-fetch": "^0.17.0",
+    "react": "^19.3.1",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^8.5.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.64.1",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "^5.0.5",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "jsdom": "^30.1.3",
+    "msw": "^3.0.3",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5",
+    "vitest-canvas-mock": "^1.2.0"
+  }
+}

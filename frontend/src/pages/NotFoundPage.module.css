@@ -1,0 +1,13 @@
+/* A single link styled as the primary button, so the markup is one interactive element. */
+.homeLink {
+  display: inline-block;
+  padding: var(--ant-padding-xs) var(--ant-padding);
+  border-radius: var(--ant-border-radius);
+  background: var(--ant-color-primary);
+  color: var(--ant-color-text-light-solid);
+}
+
+.homeLink:hover {
+  background: var(--ant-color-primary-hover);
+  color: var(--ant-color-text-light-solid);
+}

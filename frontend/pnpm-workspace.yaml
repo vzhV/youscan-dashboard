@@ -1,0 +1,8 @@
+# unrs-resolver (via eslint-import-resolver-typescript) ships prebuilt binaries; its install script is not needed.
+allowBuilds:
+  unrs-resolver: false
+# typescript-eslint is pinned to 8.72.0 in package.json: 8.72.1 was published inside pnpm's minimumReleaseAge window.
+# openapi-typescript 7 declares typescript@^5 but works with TypeScript 6; typescript-eslint caps us below 7.
+peerDependencyRules:
+  allowedVersions:
+    openapi-typescript>typescript: "6"

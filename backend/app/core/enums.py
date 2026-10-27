@@ -26,3 +26,7 @@ def chart_type_of(widget_type: WidgetType) -> ChartType | None:
     if widget_type is WidgetType.TEXT:
         return None
     return ChartType(widget_type.value)
+
+
+def widget_type_of(chart_type: ChartType) -> WidgetType:
+    return WidgetType(chart_type.value)

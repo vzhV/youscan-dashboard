@@ -4,11 +4,15 @@ Payload columns (`Dataset.data` / `display_data`) must be read only through `get
 repositories leave them deferred and raise on direct access, while these fakes would silently allow it.
 """
 
+import threading
 from dataclasses import dataclass, field
 from uuid import UUID, uuid4
 
 from app.charts.chart_data import ChartData
 from app.core.enums import DatasetOrigin, WidgetType
+from app.importing.limits import ImportLimits
+from app.importing.parsers.csv_parser import CsvParser
+from app.importing.table import Table
 from app.models import Dataset, Widget
 from app.models.base import utc_now
 
@@ -113,3 +117,16 @@ class InMemoryDatasetRepository:
         ]
         for widget_id in doomed:
             del self._store.widgets[widget_id]
+
+
+class ThreadRecordingParser:
+    """A real parser seam: records which thread parsed, then delegates to the CSV parser."""
+
+    extensions = frozenset({".csv"})
+
+    def __init__(self) -> None:
+        self.thread_ids: list[int] = []
+
+    def parse(self, content: bytes, limits: ImportLimits) -> list[Table]:
+        self.thread_ids.append(threading.get_ident())
+        return CsvParser().parse(content, limits)

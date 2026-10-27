@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from http import HTTPStatus
 from typing import Any
 
@@ -86,10 +86,15 @@ async def handle_domain_error(_: Request, exc: Exception) -> JSONResponse:
     return build_error_response(status_for(exc), body)
 
 
+def field_errors(errors: Sequence[Mapping[str, Any]]) -> list[dict[str, object]]:
+    """Reduce pydantic error dicts to the `{loc, message}` shape every validation error uses."""
+    return [{"loc": list(item["loc"]), "message": item["msg"]} for item in errors]
+
+
 async def handle_validation_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)  # noqa: S101  # narrows the handler's Exception parameter
-    fields = [{"loc": list(item["loc"]), "message": item["msg"]} for item in exc.errors()]
-    body = ErrorBody(code=VALIDATION_ERROR_CODE, message=VALIDATION_ERROR_MESSAGE, details={"fields": fields})
+    details = {"fields": field_errors(exc.errors())}
+    body = ErrorBody(code=VALIDATION_ERROR_CODE, message=VALIDATION_ERROR_MESSAGE, details=details)
     return build_error_response(HTTPStatus.UNPROCESSABLE_ENTITY, body)
 
 

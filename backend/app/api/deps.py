@@ -5,7 +5,8 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import session_scope
-from app.services.factories import build_widget_service
+from app.services.factories import build_import_service, build_widget_service
+from app.services.import_service import ImportService
 from app.services.widget_service import WidgetService
 
 
@@ -23,3 +24,10 @@ async def get_widget_service(session: SessionDep) -> WidgetService:
 
 
 WidgetServiceDep = Annotated[WidgetService, Depends(get_widget_service)]
+
+
+async def get_import_service(session: SessionDep) -> ImportService:
+    return build_import_service(session)
+
+
+ImportServiceDep = Annotated[ImportService, Depends(get_import_service)]

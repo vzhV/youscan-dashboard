@@ -14,3 +14,11 @@ def _candidates(shaped: ShapedTable) -> list[ChartType]:
     if len(shaped.data.series) == 1:
         return [ChartType.PIE, ChartType.BAR]
     return [ChartType.STACKED_BAR, ChartType.BAR]
+
+
+def explain_no_suggestion(shaped: ShapedTable) -> str:
+    """Why the preferred chart type does not fit; used when `suggest_chart_type` found nothing."""
+    reason = violation(_candidates(shaped)[0], shaped.data)
+    if reason is None:
+        raise ValueError("explain_no_suggestion called for data that has a suggested chart type")
+    return reason

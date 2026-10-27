@@ -39,15 +39,17 @@ The work is graded on **architecture, code style, complexity and decomposition**
 backend/
   app/
     main.py               create_app() + module-level `app` (Vercel entrypoint)
-    core/                 config.py (Settings), db.py (engine, session_scope), errors.py (domain errors), logging.py
-    api/                  router.py, deps.py, errors.py (handlers + error_responses()), openapi.py, routes/*.py
+    openapi_export.py     python -m app.openapi_export OUTPUT: writes the OpenAPI schema (used by `make gen-api`)
+    core/                 config.py (Settings), db.py (engine, session_scope), errors.py (domain errors), logging.py,
+                          migrations.py (Alembic config shared by the CLI and tests)
+    api/                  router.py, deps.py, errors.py (handlers + error_responses()), openapi.py, uploads.py, routes/*.py
     schemas/              Pydantic API contract (WidgetCreate / WidgetUpdate / WidgetRead, …)
     models/               SQLAlchemy ORM models
     repositories/         protocols.py + one repository per aggregate (queries only)
     services/             business logic; seed.py holds the seed manifest
     importing/            PURE: table model, parsers/ (base, csv, xlsx, registry), shaping/ (columns, shaper, chart_rules, suggest)
     charts/               PURE: chart_data.py (ChartData), random_data.py, thinning.py (LTTB)
-    cli.py                Typer CLI: inspect, import, seed, stress-seed
+    cli/                  Typer CLI (python -m app.cli): inspect, import, seed, migrate, stress-seed
   seed_data/              the provided sample files (imported by `seed` and by Reset)
   migrations/             Alembic
   tests/                  unit/, integration/, e2e/, fakes.py, factories.py, fixtures/files/

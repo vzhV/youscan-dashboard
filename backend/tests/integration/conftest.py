@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from app.api.deps import get_session
 from app.core.config import Settings
 from app.core.db import create_engine
-from tests.integration.alembic_config import make_alembic_config
+from app.core.migrations import make_alembic_config
 
 
 @pytest.fixture(scope="session")
@@ -54,7 +54,9 @@ async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 @pytest.fixture
 async def client(app: FastAPI, db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     async def override_session() -> AsyncIterator[AsyncSession]:
-        yield db_session
+        # A failed request rolls back its partial writes, as session_scope does in production.
+        async with db_session.begin_nested():
+            yield db_session
 
     app.dependency_overrides[get_session] = override_session
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as http_client:

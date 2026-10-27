@@ -128,6 +128,9 @@ def test_profile_valid_number_column_has_no_first_invalid() -> None:
         "12,5",
         "-2,500",
         "1,234.56",
+        "12%",
+        "12.5%",
+        "1,137%",
     ],
 )
 def test_grouped_number_matches_real_thousands_grouping(text: str) -> None:

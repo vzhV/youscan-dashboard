@@ -3,6 +3,7 @@ from datetime import date
 
 import pytest
 
+from app.services.import_service import ImportService
 from app.services.widget_service import WidgetService
 from tests.fakes import InMemoryDatasetRepository, InMemoryStore, InMemoryWidgetRepository
 
@@ -28,3 +29,8 @@ def dataset_repo(store: InMemoryStore) -> InMemoryDatasetRepository:
 def service(widget_repo: InMemoryWidgetRepository, dataset_repo: InMemoryDatasetRepository) -> WidgetService:
     rng = random.Random(7)  # noqa: S311  # seeded for deterministic test data
     return WidgetService(widget_repo, dataset_repo, rng, lambda: TODAY)
+
+
+@pytest.fixture
+def importer(widget_repo: InMemoryWidgetRepository, dataset_repo: InMemoryDatasetRepository) -> ImportService:
+    return ImportService(dataset_repo, widget_repo)

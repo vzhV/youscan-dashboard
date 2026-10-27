@@ -123,6 +123,13 @@ def test_nbsp_thousands_separator_makes_sheet_not_shapeable_and_names_row() -> N
         shape_table(table)
 
 
+def test_percent_cells_make_sheet_not_shapeable_and_name_the_first_cell() -> None:
+    table = make_table(["Brand", "Share"], [["A", "12%"], ["B", "30%"]])
+
+    with pytest.raises(NotShapeableError, match="Column 'Share', row 2: '12%' is not a number"):
+        shape_table(table)
+
+
 def test_two_flagged_columns_list_both_issues_in_column_order() -> None:
     table = make_table(
         ["Brand", "Positive", "Neutral"],

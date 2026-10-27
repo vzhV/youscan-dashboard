@@ -3,7 +3,7 @@ import pytest
 from app.charts.chart_data import ChartData, Series
 from app.core.enums import ChartType
 from app.importing.shaping.shaper import ColumnMapping, ShapedTable
-from app.importing.shaping.suggest import suggest_chart_type
+from app.importing.shaping.suggest import explain_no_suggestion, suggest_chart_type
 
 MAPPING = ColumnMapping(categories="c", series=None, values=("v",))
 
@@ -28,3 +28,14 @@ def shaped(category_count: int, series_count: int, *, are_dates: bool = False) -
 )
 def test_suggest_picks_first_fitting_chart_type(table: ShapedTable, expected: ChartType | None) -> None:
     assert suggest_chart_type(table) == expected
+
+
+def test_explain_no_suggestion_names_why_the_preferred_type_does_not_fit() -> None:
+    reason = explain_no_suggestion(shaped(category_count=101, series_count=2))
+
+    assert reason == "A stacked bar chart supports at most 100 categories; this data has 101"
+
+
+def test_explain_no_suggestion_rejects_data_that_has_a_suggestion() -> None:
+    with pytest.raises(ValueError, match="has a suggested chart type"):
+        explain_no_suggestion(shaped(category_count=5, series_count=2))

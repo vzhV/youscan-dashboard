@@ -15,7 +15,8 @@ _SEPARATORS = r",. \u00a0\u202f\u2009'"
 # "1,137" or "1 137" look numeric but would silently become text, so they are reported, not guessed.
 # Only real grouping (groups of exactly three digits) or a decimal comma counts, so "28.10.2024" and
 # "555 1234" are not mistaken for numbers.
-GROUPED_NUMBER = re.compile(rf"-?(\d{{1,3}}([{_SEPARATORS}]\d{{3}})+([.,]\d+)?|\d+,\d+)")
+# A trailing % ("12%") is the same kind of typo: it reads as text and would silently drop the column.
+GROUPED_NUMBER = re.compile(rf"-?((\d{{1,3}}([{_SEPARATORS}]\d{{3}})+([.,]\d+)?|\d+,\d+)%?|\d+([.,]\d+)?%)")
 
 
 class ColumnKind(StrEnum):

@@ -3,6 +3,8 @@ from io import BytesIO
 from zipfile import BadZipFile, ZipFile
 
 import pytest
+from openpyxl import Workbook
+from openpyxl.chart import BarChart, Reference
 from openpyxl.utils.exceptions import InvalidFileException
 
 from app.core.errors import InvalidFileError, LimitExceededError
@@ -107,6 +109,34 @@ def test_xlsx_truncated_sheet_xml_raises_invalid_file() -> None:
 
     with pytest.raises(InvalidFileError, match="not a valid .xlsx"):
         parse_xlsx(broken)
+
+
+def test_xlsx_workbook_with_empty_chartsheet_raises_invalid_file() -> None:
+    workbook = Workbook()
+    workbook.create_chartsheet("chart")
+    buffer = BytesIO()
+    workbook.save(buffer)
+
+    with pytest.raises(InvalidFileError, match="not a valid .xlsx"):
+        parse_xlsx(buffer.getvalue())
+
+
+def test_xlsx_chartsheet_holding_a_chart_is_skipped() -> None:
+    workbook = Workbook()
+    sheet = workbook.active
+    assert sheet is not None
+    sheet.title = "data"
+    for row in (("Brand", "Value"), ("A", 1), ("B", 2)):
+        sheet.append(row)
+    chart = BarChart()
+    chart.add_data(Reference(sheet, min_col=2, min_row=1, max_row=3), titles_from_data=True)
+    workbook.create_chartsheet("chart").add_chart(chart)
+    buffer = BytesIO()
+    workbook.save(buffer)
+
+    tables = parse_xlsx(buffer.getvalue())
+
+    assert [table.name for table in tables] == ["data"]
 
 
 def test_xlsx_zip_without_workbook_part_raises_invalid_file() -> None:

@@ -14,6 +14,8 @@ from app.importing.table import Table, build_table
 
 # OSError: openpyxl reports a zip without a workbook part that way. ParseError: truncated or broken XML parts.
 # ValueError/TypeError: unparsable cell values or coordinates raised while rows are streamed.
+# AttributeError: openpyxl crashes while loading a chartsheet that has no chart (no relationships part);
+# chartsheets that hold a chart load fine and are skipped, since they carry no rows.
 _CORRUPT_WORKBOOK_ERRORS = (
     BadZipFile,
     KeyError,
@@ -22,6 +24,7 @@ _CORRUPT_WORKBOOK_ERRORS = (
     OSError,
     ValueError,
     TypeError,
+    AttributeError,
 )
 
 

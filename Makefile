@@ -2,8 +2,8 @@
 PRE_COMMIT = PATH="$$(uv tool dir --bin):$$PATH" pre-commit
 REQUIRED_NODE_MAJOR = $(shell cat .nvmrc)
 
-.PHONY: help dev dev-db dev-db-down migrate install lint format typecheck test check node-check \
-	backend-install backend-lint backend-format backend-typecheck backend-test backend-dev \
+.PHONY: help dev dev-db dev-db-down migrate seed install lint format typecheck test check node-check \
+	backend-install backend-lint backend-format backend-typecheck backend-test backend-test-e2e backend-dev \
 	frontend-install frontend-eslint frontend-lint frontend-format frontend-typecheck frontend-test frontend-build frontend-dev
 
 help: ## List available targets
@@ -17,6 +17,9 @@ dev-db-down: ## Stop local Postgres
 
 migrate: ## Apply Alembic migrations to DATABASE_URL (or MIGRATIONS_DATABASE_URL)
 	cd backend && uv run --frozen alembic upgrade head
+
+seed: ## Import the sample files into DATABASE_URL (refuses a non-empty board)
+	cd backend && uv run --frozen python -m app.cli seed
 
 dev: ## Run backend (:8000) and frontend (Vite) together
 	$(MAKE) -j2 backend-dev frontend-dev
@@ -46,8 +49,11 @@ backend-format: ## Format the backend with Ruff
 backend-typecheck: ## mypy --strict on the backend
 	cd backend && uv run --frozen mypy app tests migrations
 
-backend-test: ## Backend unit and integration tests with coverage gate
-	cd backend && uv run --frozen pytest tests/unit tests/integration --cov=app --cov-report=term-missing
+backend-test: ## Backend unit, integration and e2e tests with coverage gate
+	cd backend && uv run --frozen pytest tests/unit tests/integration tests/e2e --cov=app --cov-report=term-missing
+
+backend-test-e2e: ## Backend e2e tests (CLI against the test database)
+	cd backend && uv run --frozen pytest tests/e2e
 
 backend-dev: ## Run the backend with auto-reload on :8000
 	cd backend && uv run --frozen uvicorn app.main:app --reload --port 8000

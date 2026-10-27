@@ -91,7 +91,7 @@ Node version comes from `.nvmrc` (Node 24 LTS). Python is 3.12, managed by uv.
 |---|---|---|
 | `api/routes` | HTTP only: validate the request, call **one** service method, return a schema | services, schemas, `api.deps`, `api.errors` |
 | `services` | Business rules and orchestration. **Never imports FastAPI** | repository protocols, importing, charts, schemas, core |
-| `repositories` | SQLAlchemy queries only. `flush()` yes, **`commit()` never** | models, `core.db` |
+| `repositories` | SQLAlchemy queries only. `flush()` yes, **`commit()` never** | models, `core`, `charts.chart_data` (return type) |
 | `models` | ORM classes | `core.db` base |
 | `importing`, `charts` | Pure logic. **No I/O, no SQLAlchemy, no FastAPI** | stdlib, openpyxl, pydantic |
 | `core` | Settings, engine/session, domain error types, logging | — |

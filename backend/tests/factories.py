@@ -1,15 +1,16 @@
 from collections.abc import Mapping, Sequence
 from io import BytesIO
 from pathlib import Path
+from uuid import UUID
 from zipfile import ZipFile
 
 from openpyxl import Workbook
 
-from app.core.enums import ChartType, DatasetOrigin
+from app.core.enums import ChartType, DatasetOrigin, WidgetType
 from app.importing.reader import read_tables
 from app.importing.source_file import SourceFile
 from app.importing.table import Cell, Row, Table
-from app.models import Dataset
+from app.models import Dataset, Widget
 
 SEED_DATA_DIR = Path(__file__).resolve().parents[1] / "seed_data"
 FIRST_DATA_ROW = 2  # row 1 is the header
@@ -84,12 +85,24 @@ def make_table(header: Sequence[str], rows: Sequence[Sequence[Cell]], name: str 
     )
 
 
-def make_dataset() -> Dataset:
-    return Dataset(
-        name="data",
-        origin=DatasetOrigin.SEED,
-        chart_type=ChartType.LINE,
-        row_count=1,
-        data={"categories": [], "series": []},
-        display_data={"categories": [], "series": []},
-    )
+def make_dataset(**overrides: object) -> Dataset:
+    fields: dict[str, object] = {
+        "name": "data",
+        "origin": DatasetOrigin.SEED,
+        "chart_type": ChartType.LINE,
+        "row_count": 1,
+        "data": {"categories": [], "series": []},
+        "display_data": {"categories": [], "series": []},
+        **overrides,
+    }
+    return Dataset(**fields)
+
+
+def make_widget(**overrides: object) -> Widget:
+    """A text widget by default; build a chart widget by passing type and dataset_id."""
+    fields: dict[str, object] = {"type": WidgetType.TEXT, "title": "widget", "position": 0, **overrides}
+    return Widget(**fields)
+
+
+def make_chart_widget(dataset_id: UUID, **overrides: object) -> Widget:
+    return make_widget(**{"type": WidgetType.LINE, "dataset_id": dataset_id, **overrides})

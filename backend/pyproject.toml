@@ -1,0 +1,105 @@
+[project]
+name = "dashboard-backend"
+version = "0.1.0"
+description = "FastAPI backend for the dashboard app"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic>=1.20.1",
+    "anyio>=4.15.1",
+    "fastapi>=0.162.0",
+    "openpyxl>=3.1.5",
+    "psycopg[binary]>=3.3.6",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.16.1",
+    "python-multipart>=0.0.32",
+    "sqlalchemy[asyncio]>=2.1.6",
+    "typer>=0.27.3",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "import-linter>=2.15",
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.3",
+    "types-openpyxl>=3.1.5.20261017",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "UP", "B", "A", "C4", "SIM", "RET", "PL", "PT", "ERA", "T20", "ASYNC", "S", "TID", "C90"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.ruff.lint.pylint]
+max-args = 4
+max-statements = 30
+max-branches = 8
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+branch = true
+omit = ["migrations/*"]
+
+[tool.coverage.report]
+fail_under = 90
+
+[tool.importlinter]
+root_package = "app"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layers"
+type = "layers"
+layers = ["app.api | app.cli", "app.services", "app.repositories", "app.models"]
+
+[[tool.importlinter.contracts]]
+name = "Pure domain packages"
+type = "forbidden"
+source_modules = ["app.importing", "app.charts"]
+forbidden_modules = ["app.api", "app.cli", "app.services", "app.repositories", "app.models", "sqlalchemy", "fastapi"]
+
+[[tool.importlinter.contracts]]
+name = "Services are HTTP-agnostic"
+type = "forbidden"
+source_modules = ["app.services", "app.schemas"]
+forbidden_modules = ["fastapi", "starlette", "app.api"]
+
+[[tool.importlinter.contracts]]
+name = "Core depends on nothing above it"
+type = "forbidden"
+source_modules = ["app.core"]
+forbidden_modules = [
+    "app.api",
+    "app.cli",
+    "app.services",
+    "app.repositories",
+    "app.schemas",
+    "app.models",
+    "app.importing",
+    "app.charts",
+]

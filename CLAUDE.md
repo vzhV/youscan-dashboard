@@ -102,6 +102,8 @@ Node version comes from `.nvmrc` (Node 24 LTS). Python is 3.12, managed by uv.
 - **One transaction per request.** `session_scope()` commits on success, rolls back on error, and always closes. The
   FastAPI dependency and the CLI both use it, and no other code commits.
 - **Services depend on repository protocols.** Unit tests inject the in-memory fakes from `tests/fakes.py`.
+  `services/factories.py` is the composition root: the only service module that builds the concrete SQL
+  repositories.
 - **Async everywhere.** CPU-bound parsing runs in a worker thread (`anyio.to_thread`).
 - **Config is read only through `core.config.Settings`.** `os.environ` appears nowhere else.
 
@@ -163,9 +165,13 @@ Node version comes from `.nvmrc` (Node 24 LTS). Python is 3.12, managed by uv.
   `/api/v1/openapi.json`.
 - **One error body everywhere:** `{"error": {"code": "<snake_case>", "message": "...", "details": ... | null}}`.
   - Domain errors map to HTTP in `api/errors.py` and nowhere else.
-  - Status codes: 404, 409, 413, 415, 422, and a 500 that never leaks internals.
+  - Status codes: 404, 409, 413, 415, 422, a 503 when the database is unreachable, and a 500 that never leaks
+    internals.
+- **Request schemas reject unknown fields** (`extra="forbid"`), so a misspelled field is a 422, not silently
+  ignored.
 - **Swagger is generated from code.**
   - Every route needs `summary`, `tags`, `response_model`, `status_code` and `responses=error_responses(...)`.
+    Routes that use the database document 503.
   - The route docstring becomes the operation description.
   - Every schema field needs `Field(description=..., examples=[...])`.
   - Operation IDs come from the custom ID function, e.g. `widgets-update`.

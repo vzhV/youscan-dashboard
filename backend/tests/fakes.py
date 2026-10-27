@@ -46,6 +46,10 @@ class InMemoryWidgetRepository:
         self._store.widgets[widget.id] = widget
         return widget
 
+    async def save(self, widget: Widget) -> Widget:
+        widget.updated_at = utc_now()
+        return widget
+
     async def delete(self, widget: Widget) -> None:
         del self._store.widgets[widget.id]
 

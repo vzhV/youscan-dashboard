@@ -1,12 +1,18 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 TITLE_MAX_LENGTH = 100
 TEXT_MAX_LENGTH = 10_000
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=TITLE_MAX_LENGTH)]
 TextContent = Annotated[str, StringConstraints(max_length=TEXT_MAX_LENGTH)]
+
+
+class RequestModel(BaseModel):
+    """Base for request bodies: unknown fields are a 422 instead of being silently ignored."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class ErrorBody(BaseModel):

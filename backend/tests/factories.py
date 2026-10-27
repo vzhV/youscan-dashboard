@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from uuid import UUID
@@ -14,6 +15,7 @@ from app.models import Dataset, Widget
 
 SEED_DATA_DIR = Path(__file__).resolve().parents[1] / "seed_data"
 FIRST_DATA_ROW = 2  # row 1 is the header
+OLD_TIMESTAMP = datetime(2000, 1, 1, tzinfo=UTC)  # earlier than anything a test creates
 
 
 def make_xlsx(sheets: Mapping[str, Sequence[Sequence[object]]]) -> bytes:

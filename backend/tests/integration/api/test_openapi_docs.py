@@ -1,9 +1,13 @@
+from http import HTTPStatus
 from typing import Any
 
 from fastapi import FastAPI, routing
+from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
 from starlette.routing import Route
+
+from app.api.deps import get_session
 
 HTTP_METHODS = {"get", "put", "post", "delete", "patch", "options", "head"}
 API_PREFIX = "/api/v1"
@@ -80,3 +84,17 @@ def test_every_schema_property_has_a_description_and_examples(app: FastAPI) -> N
             location = f"{schema_name}.{property_name}"
             assert property_schema.get("description"), f"{location} has no description"
             assert property_schema.get("examples"), f"{location} has no examples"
+
+
+def depends_on(dependant: Dependant, target: object) -> bool:
+    return any(
+        dependency.call is target or depends_on(dependency, target) for dependency in dependant.dependencies
+    )
+
+
+def test_every_database_route_documents_service_unavailable(app: FastAPI) -> None:
+    routes = [route for route in api_routes(app) if depends_on(route.dependant, get_session)]
+
+    assert routes
+    for route in routes:
+        assert HTTPStatus.SERVICE_UNAVAILABLE in route.responses, f"{route.name} must document 503"

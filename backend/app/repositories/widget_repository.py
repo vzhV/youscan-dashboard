@@ -33,6 +33,11 @@ class SqlWidgetRepository:
         statement = _widgets_with_dataset().where(Widget.id == widget.id)
         return (await self._session.scalars(statement)).one()
 
+    async def save(self, widget: Widget) -> Widget:
+        # Flushing here lets onupdate refresh updated_at before the caller builds its response.
+        await self._session.flush()
+        return widget
+
     async def delete(self, widget: Widget) -> None:
         await self._session.delete(widget)
         await self._session.flush()

@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from app.core.enums import WidgetType
 from app.repositories.protocols import DatasetRepository, WidgetRepository
-from tests.factories import make_chart_widget, make_dataset, make_widget
+from tests.factories import OLD_TIMESTAMP, make_chart_widget, make_dataset, make_widget
 
 EARLIER = datetime(2026, 1, 1, tzinfo=UTC)
 LATER = datetime(2026, 1, 2, tzinfo=UTC)
@@ -111,3 +111,17 @@ async def test_delete_all_widgets(widget_repo: WidgetRepository) -> None:
     assert await widget_repo.list_ordered() == []
     for widget in widgets:
         assert await widget_repo.get(widget.id) is None
+
+
+async def test_save_refreshes_updated_at_and_persists_the_change(widget_repo: WidgetRepository) -> None:
+    widget = await widget_repo.add(make_widget(title="before"))
+    widget.updated_at = OLD_TIMESTAMP
+    await widget_repo.save(widget)
+
+    widget.title = "after"
+    await widget_repo.save(widget)
+
+    stored = await widget_repo.get(widget.id)
+    assert stored is not None
+    assert stored.title == "after"
+    assert stored.updated_at > OLD_TIMESTAMP

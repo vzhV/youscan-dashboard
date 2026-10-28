@@ -9,6 +9,7 @@ from starlette.routing import Route
 
 from app.api.deps import get_session
 from app.api.errors import INTERNAL_ERROR_CODE, STATUS_BY_ERROR, VALIDATION_ERROR_CODE
+from app.api.openapi import DashboardApi
 from app.schemas.common import ErrorResponse
 
 HTTP_METHODS = {"get", "put", "post", "delete", "patch", "options", "head"}
@@ -144,3 +145,21 @@ def test_path_id_routes_document_a_path_parameter_validation_example(app: FastAP
             continue
         [field] = example["error"]["details"]["fields"]
         assert field["loc"][0] == "path", name
+
+
+def test_openapi_registers_import_selection_with_resolved_references(app: FastAPI) -> None:
+    schemas: dict[str, Any] = app.openapi()["components"]["schemas"]
+
+    selection = schemas["ImportSelection"]
+
+    assert selection["required"] == ["chart_type"]
+    assert {"sheet", "chart_type", "title"} <= set(selection["properties"])
+    assert selection["properties"]["chart_type"]["$ref"] == "#/components/schemas/ChartType"
+    assert "ChartType" in schemas
+    assert "$defs" not in selection
+
+
+def test_dashboard_api_without_models_still_registers_import_selection() -> None:
+    schema = DashboardApi().openapi()
+
+    assert "ImportSelection" in schema["components"]["schemas"]

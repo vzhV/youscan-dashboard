@@ -1,5 +1,7 @@
 import { Layout } from "antd";
 import { NavLink, Outlet, useLocation } from "react-router";
+import { activeDemoModes } from "@/shared/api/demoMode";
+import { DemoModeTag } from "@/shared/ui/DemoModeTag";
 import styles from "./AppLayout.module.css";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 
@@ -23,6 +25,9 @@ export function AppLayout() {
             API docs <span className={styles.visuallyHidden}>(opens in a new tab)</span>
           </a>
         </nav>
+        <div className={styles.actions}>
+          <DemoModeTag modes={activeDemoModes} />
+        </div>
       </Layout.Header>
       <Layout.Content className={styles.content}>
         <RouteErrorBoundary key={pathname}>

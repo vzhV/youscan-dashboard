@@ -5,3 +5,4 @@ playwright-report
 test-results
 pnpm-lock.yaml
 src/shared/api/schema.d.ts
+openapi.json

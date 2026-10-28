@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.errors import register_error_handlers
-from app.api.openapi import TAGS_METADATA, generate_operation_id
+from app.api.openapi import TAGS_METADATA, DashboardApi, generate_operation_id
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.db import create_engine, create_session_factory
@@ -26,10 +26,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await engine.dispose()
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None) -> DashboardApi:
     settings = settings or get_settings()
     configure_logging(settings.log_level)
-    app = FastAPI(
+    app = DashboardApi(
         lifespan=lifespan,
         title=APP_TITLE,
         version=APP_VERSION,

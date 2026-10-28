@@ -16,8 +16,9 @@ export default defineConfig(({ mode }) => {
       alias: { "@": `${import.meta.dirname}/src` },
     },
     // Coverage output lands in the watched tree and would otherwise reload the open app.
-    server: { proxy, watch: { ignored: ["**/coverage/**"] } },
-    preview: { proxy },
+    // The app is same-origin (dev proxy, production rewrite), so no CORS headers are wanted on /api responses.
+    server: { proxy, cors: false, watch: { ignored: ["**/coverage/**"] } },
+    preview: { proxy, cors: false },
     build: {
       rolldownOptions: {
         output: {

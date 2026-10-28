@@ -37,4 +37,24 @@ describe("AppLayout", () => {
     expect(screen.getByRole("link", { name: "Datasets" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
   });
+
+  it("hides the demo mode tag when the URL has no demo parameter", () => {
+    renderLayout("/");
+
+    expect(screen.queryByText(/Demo mode/)).not.toBeInTheDocument();
+  });
+
+  it("shows the demo mode tag when the URL asks for demo modes", async () => {
+    window.history.pushState({}, "", "/?demo=slow,fail");
+    try {
+      vi.resetModules();
+      const { AppLayout: FreshLayout } = await import("./AppLayout");
+
+      renderWithProviders(<FreshLayout />);
+
+      expect(screen.getByText("Demo mode: slow, fail")).toBeInTheDocument();
+    } finally {
+      window.history.pushState({}, "", "/");
+    }
+  });
 });
